@@ -16,7 +16,7 @@ namespace Sticky.Notes.Application.Features.Notes.Commands.CreateNote
             RuleFor(p => p.NoteName)
                 .NotEmpty().WithMessage("{PropertyName} is required.")
                 .NotNull()
-                .MaximumLength(20).WithMessage("{PropertyName} must not exceed 50 characters.");
+                .MaximumLength(50).WithMessage("{PropertyName} must not exceed 50 characters.");
 
             RuleFor(e => e)
                 .MustAsync(NoteNameUnique)
