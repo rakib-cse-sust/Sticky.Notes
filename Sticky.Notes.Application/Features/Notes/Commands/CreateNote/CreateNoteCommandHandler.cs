@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using MediatR;
+using Sticky.Notes.Application.Contracts.Infrastructure;
 using Sticky.Notes.Application.Contracts.Persistence;
+using Sticky.Notes.Application.Models.Mail;
 using Sticky.Notes.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -13,11 +15,13 @@ namespace Sticky.Notes.Application.Features.Notes.Commands.CreateNote
     {
         private readonly IMapper _mapper;
         private readonly INoteRepository _noteRepository;
+        private readonly IEmailService _emailService;
 
-        public CreateNotesCommandHandler(IMapper mapper, INoteRepository noteRepository)
+        public CreateNotesCommandHandler(IMapper mapper, INoteRepository noteRepository, IEmailService emailService)
         {
             _mapper = mapper;
             _noteRepository = noteRepository;
+            _emailService = emailService;
         }
 
         public async Task<Guid> Handle(CreateNoteCommand request, CancellationToken cancellationToken)
@@ -57,8 +61,21 @@ namespace Sticky.Notes.Application.Features.Notes.Commands.CreateNote
                 @note = await _noteRepository.AddAsync(@note);
 
                 response.Note = _mapper.Map<CreateNoteDto>(@note);
-            }            
-            
+            }
+
+            //Sending email notification to admin address
+            var email = new Email() { To = "gill@snowball.be", Body = $"A new note was created: {request}", Subject = "A new note was created" };
+
+            try
+            {
+                await _emailService.SendEmail(email);
+            }
+            catch (Exception ex)
+            {
+                //this shouldn't stop the API from doing else so this can be logged
+                //_logger.LogError($"Mailing about event {@event.EventId} failed due to an error with the mail service: {ex.Message}");
+            }
+
             return response;
         }
     }
